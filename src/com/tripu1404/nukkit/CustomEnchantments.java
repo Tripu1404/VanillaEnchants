@@ -36,7 +36,7 @@ public class CustomEnchantments extends PluginBase implements Listener {
         unbreakingMultiplier = getConfig().getDouble("enchants.unbreaking_multiplier", 0.5);
 
         getServer().getPluginManager().registerEvents(this, this);
-        getLogger().info("CustomEnchantments activo (sin metadata)!");
+        getLogger().info("CustomEnchantments activo (compatible NukkitX 2.x, sin metadata)!");
     }
 
     @EventHandler
@@ -49,8 +49,8 @@ public class CustomEnchantments extends PluginBase implements Listener {
         Enchantment sharpness = item.getEnchantment(9);
         if (sharpness != null && sharpness.getLevel() > 5) {
             int extraLevel = sharpness.getLevel() - 5;
-            float newDamage = event.getBaseDamage() + (float)(extraLevel * sharpnessMultiplier);
-            event.setBaseDamage(newDamage);
+            float newDamage = event.getDamage() + (float)(extraLevel * sharpnessMultiplier);
+            event.setDamage(newDamage);
         }
 
         // --- Knockback (ID 12) extra después del límite Vanilla 2 ---
@@ -87,7 +87,9 @@ public class CustomEnchantments extends PluginBase implements Listener {
 
         // --- Protection (ID 0) extra después del límite Vanilla 4 ---
         double totalReduction = 0;
-        for (Item armor : player.getArmorInventory().getContents().values()) {
+        Item[] armorContents = player.getArmorInventory().getContents();
+        for (Item armor : armorContents) {
+            if (armor == null) continue;
             Enchantment prot = armor.getEnchantment(0); // Protection ID = 0
             if (prot != null && prot.getLevel() > 4) {
                 int extraLevel = prot.getLevel() - 4;
@@ -114,16 +116,24 @@ public class CustomEnchantments extends PluginBase implements Listener {
         }
 
         if (extraLooting > 0) {
-            List<Item> originalDrops = new ArrayList<>();
-            for (Item drop : event.getDrops()) {
-                originalDrops.add(drop.clone());
+            // Convertimos el array de drops a lista para agregar más
+            Item[] drops = event.getDrops();
+            List<Item> newDrops = new ArrayList<>();
+            for (Item drop : drops) {
+                newDrops.add(drop.clone());
             }
+
+            // Duplicamos según extraLooting
             for (int i = 0; i < extraLooting; i++) {
-                for (Item drop : originalDrops) {
-                    event.getDrops().add(drop.clone());
+                for (Item drop : drops) {
+                    newDrops.add(drop.clone());
                 }
             }
+
+            // Convertimos la lista de vuelta a array
+            Item[] combined = new Item[newDrops.size()];
+            combined = newDrops.toArray(combined);
+            event.setDrops(combined);
         }
     }
 }
-
