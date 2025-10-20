@@ -10,7 +10,8 @@ import cn.nukkit.event.player.PlayerDeathEvent;
 import cn.nukkit.item.Item;
 import cn.nukkit.item.enchantment.Enchantment;
 import cn.nukkit.plugin.PluginBase;
-import cn.nukkit.utils.MetadataValue;
+import cn.nukkit.metadata.MetadataValue;
+import cn.nukkit.plugin.PluginMetadataValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -86,7 +87,7 @@ public class CustomEnchantments extends PluginBase implements Listener {
         Enchantment looting = item.getEnchantment(14);
         if (looting != null && looting.getLevel() > 3) {
             int extraLevel = looting.getLevel() - 3;
-            event.getEntity().setMetadata(METADATA_LOOTING, new cn.nukkit.plugin.PluginMetadataValue(this, extraLevel));
+            event.getEntity().setMetadata(METADATA_LOOTING, new PluginMetadataValue(this, extraLevel));
         }
     }
 
