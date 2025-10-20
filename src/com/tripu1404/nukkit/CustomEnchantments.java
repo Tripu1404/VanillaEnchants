@@ -9,8 +9,6 @@ import cn.nukkit.event.entity.EntityDamageEvent;
 import cn.nukkit.event.player.PlayerDeathEvent;
 import cn.nukkit.item.Item;
 import cn.nukkit.item.enchantment.Enchantment;
-import cn.nukkit.metadata.FixedMetadataValue;
-import cn.nukkit.metadata.MetadataValue;
 import cn.nukkit.plugin.PluginBase;
 
 import java.util.ArrayList;
@@ -25,8 +23,6 @@ public class CustomEnchantments extends PluginBase implements Listener {
     private double lootingMultiplier;
     private double unbreakingMultiplier;
 
-    private final String METADATA_LOOTING = "custom_looting_extra";
-
     @Override
     public void onEnable() {
         saveDefaultConfig();
@@ -40,7 +36,7 @@ public class CustomEnchantments extends PluginBase implements Listener {
         unbreakingMultiplier = getConfig().getDouble("enchants.unbreaking_multiplier", 0.5);
 
         getServer().getPluginManager().registerEvents(this, this);
-        getLogger().info("CustomEnchantments activo con metadata compatible NukkitX!");
+        getLogger().info("CustomEnchantments activo (sin metadata)!");
     }
 
     @EventHandler
@@ -82,13 +78,6 @@ public class CustomEnchantments extends PluginBase implements Listener {
                 item.setDamage(item.getDamage()); // previene daño adicional al item
             }
         }
-
-        // --- Looting (ID 14) extra después del límite Vanilla 3 ---
-        Enchantment looting = item.getEnchantment(14);
-        if (looting != null && looting.getLevel() > 3) {
-            int extraLevel = looting.getLevel() - 3;
-            event.getEntity().setMetadata(METADATA_LOOTING, new FixedMetadataValue(this, extraLevel));
-        }
     }
 
     @EventHandler
@@ -113,14 +102,15 @@ public class CustomEnchantments extends PluginBase implements Listener {
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
-        Entity entity = event.getEntity();
-        int extraLooting = 0;
+        if (!(event.getEntity() instanceof Player)) return;
+        Player player = event.getEntity();
 
-        if (entity.hasMetadata(METADATA_LOOTING)) {
-            List<MetadataValue> values = entity.getMetadata(METADATA_LOOTING);
-            for (MetadataValue value : values) {
-                extraLooting = value.asInt();
-            }
+        // --- Looting (ID 14) extra después del límite Vanilla 3 ---
+        Item weapon = player.getInventory().getItemInHand();
+        Enchantment looting = weapon.getEnchantment(14);
+        int extraLooting = 0;
+        if (looting != null && looting.getLevel() > 3) {
+            extraLooting = looting.getLevel() - 3;
         }
 
         if (extraLooting > 0) {
@@ -136,3 +126,4 @@ public class CustomEnchantments extends PluginBase implements Listener {
         }
     }
 }
+
