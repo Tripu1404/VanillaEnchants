@@ -42,14 +42,14 @@ public class CustomEnchantments extends PluginBase implements Listener {
         Enchantment sharp = weapon.getEnchantment(9);
         if (sharp != null) {
             int extra = Math.max(0, sharp.getLevel() - 5);
-            damage += extra * sharpnessMultiplier;
+            damage += (float)(extra * sharpnessMultiplier);
         }
 
         // --- Knockback (ID 12) ---
         Enchantment kb = weapon.getEnchantment(12);
         if (kb != null) {
             int extra = Math.max(0, kb.getLevel() - 2);
-            knockback += extra * knockbackMultiplier;
+            knockback += (float)(extra * knockbackMultiplier);
         }
 
         // --- Thorns (ID 5) ---
@@ -57,7 +57,7 @@ public class CustomEnchantments extends PluginBase implements Listener {
         if (thorns != null) {
             int extra = Math.max(0, thorns.getLevel() - 3);
             Entity target = event.getEntity();
-            target.attack(extra * thornsDamage); // daño directo al objetivo
+            target.attack((float)(extra * thornsDamage));
         }
 
         // --- Unbreaking (ID 17) ---
@@ -81,7 +81,7 @@ public class CustomEnchantments extends PluginBase implements Listener {
 
         double totalReduction = 0;
 
-        // Armor slots: 0=boots,1=leggings,2=chestplate,3=helmet
+        // Slots de armor: 0=boots,1=leggings,2=chestplate,3=helmet
         Item[] armor = new Item[4];
         armor[0] = player.getInventory().getBoots();
         armor[1] = player.getInventory().getLeggings();
