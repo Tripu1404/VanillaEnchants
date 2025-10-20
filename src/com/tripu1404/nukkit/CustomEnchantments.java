@@ -10,6 +10,7 @@ import cn.nukkit.event.player.PlayerDeathEvent;
 import cn.nukkit.item.Item;
 import cn.nukkit.item.enchantment.Enchantment;
 import cn.nukkit.plugin.PluginBase;
+import cn.nukkit.utils.MetadataValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,8 @@ public class CustomEnchantments extends PluginBase implements Listener {
     private double knockbackMultiplier;
     private double lootingMultiplier;
     private double unbreakingMultiplier;
+
+    private final String METADATA_LOOTING = "custom_looting_extra";
 
     @Override
     public void onEnable() {
@@ -36,7 +39,7 @@ public class CustomEnchantments extends PluginBase implements Listener {
         unbreakingMultiplier = getConfig().getDouble("enchants.unbreaking_multiplier", 0.5);
 
         getServer().getPluginManager().registerEvents(this, this);
-        getLogger().info("CustomEnchantments activo!");
+        getLogger().info("CustomEnchantments activo con IDs numéricos!");
     }
 
     @EventHandler
@@ -45,45 +48,45 @@ public class CustomEnchantments extends PluginBase implements Listener {
         Player player = (Player) event.getDamager();
         Item item = player.getInventory().getItemInHand();
 
-        // --- Sharpness (Filo) extra después del límite Vanilla 5 ---
-        Enchantment sharpness = item.getEnchantment(Enchantment.ID_SHARPNESS);
+        // --- Sharpness (ID 9) extra después del límite Vanilla 5 ---
+        Enchantment sharpness = item.getEnchantment(9);
         if (sharpness != null && sharpness.getLevel() > 5) {
             int extraLevel = sharpness.getLevel() - 5;
-            event.setBaseDamage(event.getBaseDamage() + extraLevel * sharpnessMultiplier);
+            float newDamage = event.getBaseDamage() + (float)(extraLevel * sharpnessMultiplier);
+            event.setBaseDamage(newDamage);
         }
 
-        // --- Knockback (Retroceso) extra después del límite Vanilla 2 ---
-        Enchantment knockback = item.getEnchantment(Enchantment.ID_KNOCKBACK);
+        // --- Knockback (ID 12) extra después del límite Vanilla 2 ---
+        Enchantment knockback = item.getEnchantment(12);
         if (knockback != null && knockback.getLevel() > 2) {
             int extraLevel = knockback.getLevel() - 2;
-            event.setKnockBack(event.getKnockBack() + extraLevel * knockbackMultiplier);
+            float newKnockback = event.getKnockBack() + (float)(extraLevel * knockbackMultiplier);
+            event.setKnockBack(newKnockback);
         }
 
-        // --- Thorns (Espinas) extra después del límite Vanilla 3 ---
-        Enchantment thorns = item.getEnchantment(Enchantment.ID_THORNS);
+        // --- Thorns (ID 5) extra después del límite Vanilla 3 ---
+        Enchantment thorns = item.getEnchantment(5);
         if (thorns != null && thorns.getLevel() > 3) {
             int extraLevel = thorns.getLevel() - 3;
-            if (event.getEntity() instanceof Player) {
-                Player target = (Player) event.getEntity();
-                target.attack(new EntityDamageEvent(target, EntityDamageEvent.DamageCause.CUSTOM, extraLevel * thornsDamage));
-            }
+            Entity target = event.getEntity();
+            target.attack((float)(extraLevel * thornsDamage));
         }
 
-        // --- Unbreaking (Irrompible) extra después del límite Vanilla 3 ---
-        Enchantment unbreaking = item.getEnchantment(Enchantment.ID_UNBREAKING);
+        // --- Unbreaking (ID 17) extra después del límite Vanilla 3 ---
+        Enchantment unbreaking = item.getEnchantment(17);
         if (unbreaking != null && unbreaking.getLevel() > 3) {
             int extraLevel = unbreaking.getLevel() - 3;
             double chance = 1.0 / (extraLevel + 1) * unbreakingMultiplier;
             if (Math.random() > chance) {
-                item.setDamage(item.getDamage()); // Cancelamos daño extra al item
+                item.setDamage(item.getDamage()); // previene daño adicional al item
             }
         }
 
-        // --- Looting (Botín) extra después del límite Vanilla 3 ---
-        Enchantment looting = item.getEnchantment(Enchantment.ID_LOOTING);
+        // --- Looting (ID 14) extra después del límite Vanilla 3 ---
+        Enchantment looting = item.getEnchantment(14);
         if (looting != null && looting.getLevel() > 3) {
             int extraLevel = looting.getLevel() - 3;
-            event.getEntity().setData("custom_looting_extra", extraLevel);
+            event.getEntity().setMetadata(METADATA_LOOTING, new cn.nukkit.plugin.PluginMetadataValue(this, extraLevel));
         }
     }
 
@@ -92,17 +95,17 @@ public class CustomEnchantments extends PluginBase implements Listener {
         if (!(event.getEntity() instanceof Player)) return;
         Player player = (Player) event.getEntity();
 
-        // --- Protection (Protección) extra después del límite Vanilla 4 ---
+        // --- Protection (ID 0) extra después del límite Vanilla 4 ---
         double totalReduction = 0;
         for (Item armor : player.getArmorInventory().getContents().values()) {
-            Enchantment prot = armor.getEnchantment(Enchantment.ID_PROTECTION);
+            Enchantment prot = armor.getEnchantment(0); // Protection ID = 0
             if (prot != null && prot.getLevel() > 4) {
                 int extraLevel = prot.getLevel() - 4;
                 totalReduction += extraLevel * protectionMultiplier;
             }
         }
 
-        double newDamage = event.getDamage() - totalReduction;
+        float newDamage = event.getDamage() - (float) totalReduction;
         if (newDamage < 0) newDamage = 0;
         event.setDamage(newDamage);
     }
@@ -110,15 +113,25 @@ public class CustomEnchantments extends PluginBase implements Listener {
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
         Entity entity = event.getEntity();
-        int extraLooting = entity.hasData("custom_looting_extra") ? entity.getData("custom_looting_extra") : 0;
+        int extraLooting = 0;
+
+        if (entity.hasMetadata(METADATA_LOOTING)) {
+            List<MetadataValue> values = entity.getMetadata(METADATA_LOOTING);
+            for (MetadataValue value : values) {
+                extraLooting = value.asInt();
+            }
+        }
+
         if (extraLooting > 0) {
-            List<Item> newDrops = new ArrayList<>();
+            List<Item> originalDrops = new ArrayList<>();
             for (Item drop : event.getDrops()) {
-                for (int i = 0; i < extraLooting; i++) {
-                    newDrops.add(drop.clone());
+                originalDrops.add(drop.clone());
+            }
+            for (int i = 0; i < extraLooting; i++) {
+                for (Item drop : originalDrops) {
+                    event.getDrops().add(drop.clone());
                 }
             }
-            event.getDrops().addAll(newDrops);
         }
     }
 }
