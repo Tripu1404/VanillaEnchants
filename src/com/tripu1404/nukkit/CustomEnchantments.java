@@ -87,7 +87,14 @@ public class CustomEnchantments extends PluginBase implements Listener {
 
         // --- Protection (ID 0) extra después del límite Vanilla 4 ---
         double totalReduction = 0;
-        Item[] armorContents = player.getArmorInventory().getContents();
+
+        // Slots de armor: 0=boots, 1=leggings, 2=chestplate, 3=helmet
+        Item[] armorContents = new Item[4];
+        armorContents[0] = player.getInventory().getBoots();
+        armorContents[1] = player.getInventory().getLeggings();
+        armorContents[2] = player.getInventory().getChestplate();
+        armorContents[3] = player.getInventory().getHelmet();
+
         for (Item armor : armorContents) {
             if (armor == null) continue;
             Enchantment prot = armor.getEnchantment(0); // Protection ID = 0
