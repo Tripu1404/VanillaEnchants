@@ -9,9 +9,9 @@ import cn.nukkit.event.entity.EntityDamageEvent;
 import cn.nukkit.event.player.PlayerDeathEvent;
 import cn.nukkit.item.Item;
 import cn.nukkit.item.enchantment.Enchantment;
-import cn.nukkit.plugin.PluginBase;
+import cn.nukkit.metadata.FixedMetadataValue;
 import cn.nukkit.metadata.MetadataValue;
-import cn.nukkit.plugin.PluginMetadataValue;
+import cn.nukkit.plugin.PluginBase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +40,7 @@ public class CustomEnchantments extends PluginBase implements Listener {
         unbreakingMultiplier = getConfig().getDouble("enchants.unbreaking_multiplier", 0.5);
 
         getServer().getPluginManager().registerEvents(this, this);
-        getLogger().info("CustomEnchantments activo con IDs numéricos!");
+        getLogger().info("CustomEnchantments activo con metadata compatible NukkitX!");
     }
 
     @EventHandler
@@ -87,7 +87,7 @@ public class CustomEnchantments extends PluginBase implements Listener {
         Enchantment looting = item.getEnchantment(14);
         if (looting != null && looting.getLevel() > 3) {
             int extraLevel = looting.getLevel() - 3;
-            event.getEntity().setMetadata(METADATA_LOOTING, new PluginMetadataValue(this, extraLevel));
+            event.getEntity().setMetadata(METADATA_LOOTING, new FixedMetadataValue(this, extraLevel));
         }
     }
 
