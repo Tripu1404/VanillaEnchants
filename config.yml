@@ -1,0 +1,7 @@
+enchants:
+  sharpness_multiplier: 1.25
+  protection_multiplier: 1.0
+  thorns_damage: 1.0
+  knockback_multiplier: 0.5
+  looting_multiplier: 1
+  unbreaking_multiplier: 0.5
