@@ -7,79 +7,37 @@ import cn.nukkit.event.EventHandler;
 import cn.nukkit.event.EventPriority;
 import cn.nukkit.event.entity.EntityDamageByEntityEvent;
 import cn.nukkit.event.entity.EntityDamageEvent;
-import cn.nukkit.event.player.PlayerDeathEvent;
 import cn.nukkit.item.Item;
 import cn.nukkit.item.enchantment.Enchantment;
 import cn.nukkit.plugin.PluginBase;
 
-import java.util.ArrayList;
-import java.util.List;
+public class CustomEnchantmentsSimple extends PluginBase implements Listener {
 
-public class CustomEnchantmentsUnlimited extends PluginBase implements Listener {
-
-    private double sharpnessMultiplier = 1.25;
-    private double protectionMultiplier = 1.0;
-    private double thornsDamage = 1.0;
-    private double knockbackMultiplier = 0.5;
-    private double unbreakingMultiplier = 0.5;
-    private double lootingMultiplier = 1.0;
+    private double sharpnessMultiplier = 1.25; // daño extra por nivel de Sharpness sobre 5
+    private double protectionMultiplier = 1.0; // reducción extra por nivel de Protection sobre 4
 
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
-        getLogger().info("CustomEnchantmentsUnlimited activo!");
+        getLogger().info("CustomEnchantmentsSimple activo: solo Sharpness y Protection.");
     }
 
-    // ------------------ COMBATE ------------------
-
+    // ------------------ Sharpness (Filo) ------------------
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityDamage(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player)) return;
         Player player = (Player) event.getDamager();
         Item weapon = player.getInventory().getItemInHand();
 
-        float baseDamage = 1f; // daño base genérico si quieres puedes personalizar por arma
-        float knockback = 0f;
-
-        // --- Sharpness (ID 9) ---
-        Enchantment sharp = weapon.getEnchantment(9);
-        if (sharp != null) {
-            int extra = sharp.getLevel();
-            baseDamage += extra * sharpnessMultiplier;
+        Enchantment sharp = weapon.getEnchantment(9); // ID Sharpness
+        if (sharp != null && sharp.getLevel() > 5) {
+            int extra = sharp.getLevel() - 5;
+            float newDamage = event.getDamage() + (float)(extra * sharpnessMultiplier);
+            event.setDamage(newDamage);
         }
-
-        // --- Knockback (ID 12) ---
-        Enchantment kb = weapon.getEnchantment(12);
-        if (kb != null) {
-            int extra = kb.getLevel();
-            knockback += extra * knockbackMultiplier;
-        }
-
-        // --- Thorns (ID 5) ---
-        Enchantment thorns = weapon.getEnchantment(5);
-        if (thorns != null) {
-            int extra = thorns.getLevel();
-            Entity target = event.getEntity();
-            target.attack((float)(extra * thornsDamage));
-        }
-
-        // --- Unbreaking (ID 17) ---
-        Enchantment unbreaking = weapon.getEnchantment(17);
-        if (unbreaking != null) {
-            int extra = unbreaking.getLevel();
-            double chance = 1.0 / (extra + 1) * unbreakingMultiplier;
-            if (Math.random() > chance) {
-                weapon.setDamage(weapon.getDamage()); // evita desgaste
-            }
-        }
-
-        // Aplicar daño y knockback manualmente
-        event.setDamage(baseDamage);
-        event.setKnockBack(knockback);
     }
 
-    // ------------------ PROTECCION ------------------
-
+    // ------------------ Protection (Protección) ------------------
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityDamageFinal(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
@@ -87,7 +45,7 @@ public class CustomEnchantmentsUnlimited extends PluginBase implements Listener 
 
         float totalReduction = 0f;
 
-        // Armor slots: 0=boots,1=leggings,2=chestplate,3=helmet
+        // Slots de armor: boots, leggings, chestplate, helmet
         Item[] armor = new Item[4];
         armor[0] = player.getInventory().getBoots();
         armor[1] = player.getInventory().getLeggings();
@@ -96,9 +54,9 @@ public class CustomEnchantmentsUnlimited extends PluginBase implements Listener 
 
         for (Item a : armor) {
             if (a == null) continue;
-            Enchantment prot = a.getEnchantment(0); // Protection
-            if (prot != null) {
-                int extra = prot.getLevel();
+            Enchantment prot = a.getEnchantment(0); // ID Protection
+            if (prot != null && prot.getLevel() > 4) {
+                int extra = prot.getLevel() - 4;
                 totalReduction += extra * protectionMultiplier;
             }
         }
@@ -106,28 +64,5 @@ public class CustomEnchantmentsUnlimited extends PluginBase implements Listener 
         float newDamage = event.getDamage() - totalReduction;
         if (newDamage < 0) newDamage = 0;
         event.setDamage(newDamage);
-    }
-
-    // ------------------ LOOTING ------------------
-
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onPlayerDeath(PlayerDeathEvent event) {
-        Player player = event.getEntity();
-        Item weapon = player.getInventory().getItemInHand();
-
-        Enchantment looting = weapon.getEnchantment(14);
-        int extraLoot = looting != null ? looting.getLevel() : 0;
-        if (extraLoot <= 0) return;
-
-        Item[] drops = event.getDrops();
-        List<Item> newDrops = new ArrayList<>();
-        for (Item drop : drops) newDrops.add(drop.clone());
-
-        // Generar drops extra según nivel de Looting
-        for (int i = 0; i < extraLoot; i++) {
-            for (Item drop : drops) newDrops.add(drop.clone());
-        }
-
-        event.setDrops(newDrops.toArray(new Item[0]));
     }
 }
